@@ -17,7 +17,6 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { useEffect, useState, useRef } from 'react';
-import Image from 'next/image';
 import { Button } from './ui/button';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { MediaItem as MediaItemType } from '@/lib/file-utils';
@@ -149,27 +148,21 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                           className="w-full h-full flex items-center justify-center overflow-hidden" 
                           onMouseDown={handleMouseDown}
                         >
-                          <div
-                            className="relative w-full h-full"
-                          >
-                            <Image
-                                ref={imageRef}
-                                src={getMediaUrl(item)}
-                                alt={item.name}
-                                fill
-                                className={cn(
-                                  "object-contain transition-transform duration-200",
-                                  zoom > 1 && panning && 'cursor-grabbing',
-                                  zoom > 1 && !panning && 'cursor-grab'
-                                )}
-                                style={{
-                                  transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
-                                  transformOrigin: 'center center',
-                                }}
-                                data-ai-hint="gallery full"
-                                unoptimized
-                            />
-                          </div>
+                          <img
+                              ref={imageRef}
+                              src={getMediaUrl(item)}
+                              alt={item.name}
+                              className={cn(
+                                "object-contain transition-transform duration-200 w-full h-full",
+                                zoom > 1 && panning && 'cursor-grabbing',
+                                zoom > 1 && !panning && 'cursor-grab'
+                              )}
+                              style={{
+                                transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+                                transformOrigin: 'center center',
+                              }}
+                              data-ai-hint="gallery full"
+                          />
                         </div>
                     )}
                     {item.type === 'video' && (
