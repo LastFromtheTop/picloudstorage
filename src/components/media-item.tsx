@@ -31,14 +31,18 @@ export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }:
             <div className="flex h-full w-full items-center justify-center bg-secondary">
               <Folder className="h-16 w-16 text-muted-foreground/50" />
             </div>
-          ) : (
+          ) : item.type === 'image' ? (
             <Image
               src={item.url || 'https://placehold.co/400x400.png'}
               alt={item.name}
               fill
               className="object-cover transition-transform group-hover:scale-105"
-              data-ai-hint={item.type === 'image' ? "gallery photo" : "video still"}
+              data-ai-hint="gallery photo"
             />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-secondary">
+              <Film className="h-16 w-16 text-muted-foreground/50" />
+            </div>
           )}
           {isSelected && (
              <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
