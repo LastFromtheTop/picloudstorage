@@ -141,7 +141,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
           }}>
             <CarouselContent className="h-full">
               {items.map((item, index) => (
-                <CarouselItem key={index} className="h-full w-full flex items-center justify-center">
+                <CarouselItem key={index} className="h-full w-full flex items-center justify-center p-6">
                     {item.type === 'image' && (
                         <div 
                           className="w-full h-full flex items-center justify-center overflow-hidden" 
