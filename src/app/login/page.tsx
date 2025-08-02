@@ -41,7 +41,7 @@ export default function LoginPage() {
     setIsLoading(true);
     // Mock API call
     setTimeout(() => {
-      if (values.email === 'user@example.com' && values.password === 'password') {
+      if (values.email === 'admin@picloud.com' && values.password === 'supersecret') {
         localStorage.setItem('user-session', JSON.stringify({ email: values.email, name: 'Demo User' }));
         toast({
           title: 'Login Successful',
@@ -115,9 +115,6 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-[#A0C4FF] text-primary-foreground hover:bg-[#a0c4ff]/90" disabled={isLoading}>
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
-            <div className="text-center text-xs text-[#8892b0]">
-                <p>Use user@example.com / password</p>
-            </div>
           </form>
         </Form>
       </div>
