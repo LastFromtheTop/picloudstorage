@@ -4,22 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/main-layout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SessionProvider, useSession } from '@/hooks/use-session';
 
-export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+function HomePageContent() {
+  const { isAuthenticated, isLoading } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // Mock authentication check
-    const session = localStorage.getItem('user-session');
-    if (!session) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login');
-    } else {
-      setIsAuthenticated(true);
     }
-  }, [router]);
+  }, [isLoading, isAuthenticated, router]);
 
-  if (isAuthenticated === null) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -34,4 +31,13 @@ export default function Home() {
   }
 
   return <MainLayout />;
+}
+
+
+export default function Home() {
+  return (
+    <SessionProvider>
+      <HomePageContent />
+    </SessionProvider>
+  )
 }

@@ -50,12 +50,14 @@ import {
 import MemoriesView from './memories-view';
 import { createFolder, deleteItems, getFiles, restoreItems, toggleFavorite } from '@/lib/actions';
 import type { MediaItem } from '@/lib/file-utils';
+import { useSession } from '@/hooks/use-session';
 
 type SortOrder = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc';
 type View = 'files' | 'memories' | 'favorites' | 'trash';
 
 export default function MainLayout() {
   const { toast } = useToast();
+  const { user } = useSession();
   const [isPending, startTransition] = useTransition();
   const [currentPath, setCurrentPath] = useState<string[]>(['My Files']);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
@@ -71,15 +73,18 @@ export default function MainLayout() {
   const [currentView, setCurrentView] = useState<View>('files');
   
   const refreshFiles = () => {
+    if (!user) return;
     startTransition(async () => {
-      const allFiles = await getFiles();
+      const allFiles = await getFiles(user.email);
       setMediaItems(allFiles);
     });
   };
 
   useEffect(() => {
-    refreshFiles();
-  }, []);
+    if (user) {
+      refreshFiles();
+    }
+  }, [user]);
 
   const handleSelect = (id: string) => {
     setSelectedItems((prev) => {
@@ -123,6 +128,7 @@ export default function MainLayout() {
   }, [mediaItems, currentPath, sortOrder, currentView]);
 
   const handleCreateFolder = async () => {
+    if (!user) return;
     if (newFolderName.trim() === '') {
       toast({
         variant: 'destructive',
@@ -132,7 +138,7 @@ export default function MainLayout() {
       return;
     }
     
-    await createFolder(currentPath.join('/'), newFolderName);
+    await createFolder(currentPath.join('/'), newFolderName, user.email);
     refreshFiles();
 
     setIsCreateFolderDialogOpen(false);
@@ -144,8 +150,9 @@ export default function MainLayout() {
   };
 
   const handleDelete = async (permanently = false) => {
+    if (!user) return;
     const itemsToDelete = Array.from(selectedItems);
-    await deleteItems(itemsToDelete, permanently);
+    await deleteItems(itemsToDelete, permanently, user.email);
     refreshFiles();
     setSelectedItems(new Set());
     setIsDeleteDialogOpen(false);
@@ -157,8 +164,9 @@ export default function MainLayout() {
   };
 
   const handleRestore = async () => {
+    if (!user) return;
     const itemsToRestore = Array.from(selectedItems);
-    await restoreItems(itemsToRestore);
+    await restoreItems(itemsToRestore, user.email);
     refreshFiles();
     setSelectedItems(new Set());
     toast({
@@ -168,12 +176,13 @@ export default function MainLayout() {
   };
   
   const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user) return;
     setIsUploading(true);
     setUploadProgress(0);
 
     const formData = new FormData();
     formData.append('path', currentPath.join('/'));
+    formData.append('user', user.email);
     for (const file of files) {
         formData.append('files', file);
     }
@@ -220,8 +229,9 @@ export default function MainLayout() {
   };
   
   const handleToggleFavorite = async () => {
+    if (!user) return;
     const itemsToToggle = Array.from(selectedItems);
-    await toggleFavorite(itemsToToggle);
+    await toggleFavorite(itemsToToggle, user.email);
     refreshFiles();
     const isFavoriting = mediaItems.find(item => item.id === itemsToToggle[0] && item.isFavorite) === undefined;
     setSelectedItems(new Set());

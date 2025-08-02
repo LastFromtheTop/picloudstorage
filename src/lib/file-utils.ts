@@ -14,6 +14,7 @@ export interface MediaItem {
   isFavorite?: boolean;
   isTrashed?: boolean;
   originalPath?: string;
+  owner: string; // User email
 }
 
 export type Metadata = Omit<MediaItem, 'name' | 'type' | 'path' | 'createdAt'>;
@@ -45,19 +46,21 @@ export async function updateMetadata(newMetadata: Metadata[]) {
 }
 
 
-export function getResolvedPath(relativePath: string): string {
+export function getResolvedPath(relativePath: string, user: string): string {
+  const userStorageDir = path.join(STORAGE_DIR, user);
   if (relativePath === 'My Files') {
-    return STORAGE_DIR;
+    return userStorageDir;
   }
   const cleanRelativePath = relativePath.replace(/^My Files\/?/, '');
-  return path.join(STORAGE_DIR, cleanRelativePath);
+  return path.join(userStorageDir, cleanRelativePath);
 }
 
-function getBreadcrumbPath(resolvedPath: string): string {
-  if (resolvedPath === STORAGE_DIR) {
+function getBreadcrumbPath(resolvedPath: string, user: string): string {
+    const userStorageDir = path.join(STORAGE_DIR, user);
+  if (resolvedPath === userStorageDir) {
     return 'My Files';
   }
-  const relative = path.relative(STORAGE_DIR, resolvedPath);
+  const relative = path.relative(userStorageDir, resolvedPath);
   return path.join('My Files', relative);
 }
 
@@ -65,31 +68,35 @@ export async function createFolder(folderPath: string) {
   await fs.mkdir(folderPath, { recursive: true });
 }
 
-export async function getAllFiles(): Promise<MediaItem[]> {
+export async function getAllFiles(user: string): Promise<MediaItem[]> {
   const metadata = await readMetadata();
   const allItems: MediaItem[] = [];
+  const userStorageDir = path.join(STORAGE_DIR, user);
+  const userTrashDir = path.join(TRASH_DIR, user);
+
+  await fs.mkdir(userStorageDir, { recursive: true });
+  await fs.mkdir(userTrashDir, { recursive: true });
 
   async function crawl(directory: string) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(directory, entry.name);
-      // Skip trash and metadata files
-      if (fullPath === TRASH_DIR || fullPath === METADATA_FILE) continue;
-
+      
       const stats = await fs.stat(fullPath);
-      const id = path.relative(STORAGE_DIR, fullPath);
-      const meta = metadata.find(m => m.id === id);
+      const id = path.relative(userStorageDir, fullPath);
+      const meta = metadata.find(m => m.id === id && m.owner === user);
 
       const item: MediaItem = {
         id: id,
         name: entry.name,
         type: 'file',
-        path: getBreadcrumbPath(directory),
+        path: getBreadcrumbPath(directory, user),
         createdAt: stats.birthtime.toISOString(),
         isFavorite: meta?.isFavorite || false,
         isTrashed: false,
         originalPath: meta?.originalPath,
+        owner: user,
       };
 
       if (entry.isDirectory()) {
@@ -107,22 +114,22 @@ export async function getAllFiles(): Promise<MediaItem[]> {
     }
   }
 
-  // Crawl main storage
-  await crawl(STORAGE_DIR);
+  await crawl(userStorageDir);
   
-  // Crawl trash to get trashed items
   try {
-    const trashedEntries = await fs.readdir(TRASH_DIR);
+    const trashedEntries = await fs.readdir(userTrashDir);
     for (const entryName of trashedEntries) {
-        const id = path.relative(STORAGE_DIR, path.join(TRASH_DIR, entryName));
-        const meta = metadata.find(m => m.id === id);
+        const trashedFilePath = path.join(userTrashDir, entryName);
+        const id = path.relative(userStorageDir, trashedFilePath);
+        const meta = metadata.find(m => m.id === id && m.owner === user);
+
         if (meta) {
-           const stats = await fs.stat(path.join(TRASH_DIR, entryName));
+           const stats = await fs.stat(trashedFilePath);
            allItems.push({
                ...meta,
                id: id,
                name: path.basename(meta.id),
-               type: 'file', // Simplified for trash view
+               type: 'file',
                path: 'Trash',
                createdAt: stats.birthtime.toISOString(),
                isTrashed: true,
@@ -133,27 +140,28 @@ export async function getAllFiles(): Promise<MediaItem[]> {
       // Ignore if trash is empty or doesn't exist
   }
 
-
-  return allItems;
+  return allItems.filter(item => item.owner === user);
 }
 
-export async function moveItems(sources: string[], destinationDir: string, isTrash: boolean) {
+export async function moveItems(sources: string[], destinationDir: string, isTrash: boolean, user: string) {
     const metadata = await readMetadata();
+    const userStorageDir = path.join(STORAGE_DIR, user);
 
     for (const sourcePath of sources) {
+        await fs.mkdir(destinationDir, {recursive: true});
         const destPath = path.join(destinationDir, path.basename(sourcePath));
         await fs.rename(sourcePath, destPath);
 
-        const oldId = path.relative(STORAGE_DIR, sourcePath);
-        const newId = path.relative(STORAGE_DIR, destPath);
+        const oldId = path.relative(userStorageDir, sourcePath);
+        const newId = path.relative(userStorageDir, destPath);
         
-        const metaIndex = metadata.findIndex(m => m.id === oldId);
+        const metaIndex = metadata.findIndex(m => m.id === oldId && m.owner === user);
 
         if (metaIndex !== -1) {
             metadata[metaIndex].id = newId;
             if (isTrash) {
                 metadata[metaIndex].isTrashed = true;
-                metadata[metaIndex].originalPath = getBreadcrumbPath(path.dirname(sourcePath));
+                metadata[metaIndex].originalPath = getBreadcrumbPath(path.dirname(sourcePath), user);
             } else {
                  metadata[metaIndex].isTrashed = false;
                  delete metadata[metaIndex].originalPath;
@@ -163,7 +171,8 @@ export async function moveItems(sources: string[], destinationDir: string, isTra
                 id: newId,
                 isFavorite: false,
                 isTrashed: isTrash,
-                originalPath: isTrash ? getBreadcrumbPath(path.dirname(sourcePath)) : undefined,
+                owner: user,
+                originalPath: isTrash ? getBreadcrumbPath(path.dirname(sourcePath), user) : undefined,
             });
         }
     }
@@ -171,12 +180,14 @@ export async function moveItems(sources: string[], destinationDir: string, isTra
 }
 
 
-export async function deleteItems(itemPaths: string[]) {
+export async function deleteItems(itemPaths: string[], user: string) {
     const metadata = await readMetadata();
+    const userStorageDir = path.join(STORAGE_DIR, user);
+
     for (const itemPath of itemPaths) {
         await fs.rm(itemPath, { recursive: true, force: true });
-        const id = path.relative(STORAGE_DIR, itemPath);
-        const index = metadata.findIndex(m => m.id === id);
+        const id = path.relative(userStorageDir, itemPath);
+        const index = metadata.findIndex(m => m.id === id && m.owner === user);
         if (index !== -1) {
             metadata.splice(index, 1);
         }

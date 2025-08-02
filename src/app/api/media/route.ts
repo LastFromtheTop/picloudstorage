@@ -8,13 +8,14 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const relativePath = searchParams.get('path');
   const fileName = searchParams.get('file');
+  const user = searchParams.get('user');
 
-  if (!relativePath || !fileName) {
-    return new NextResponse('Missing path or file parameter', { status: 400 });
+  if (!relativePath || !fileName || !user) {
+    return new NextResponse('Missing path, file, or user parameter', { status: 400 });
   }
 
   try {
-    const resolvedDir = getResolvedPath(relativePath);
+    const resolvedDir = getResolvedPath(relativePath, user);
     const filePath = path.join(resolvedDir, fileName);
 
     // Check if file exists

@@ -12,30 +12,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useSession } from '@/hooks/use-session';
 import { CreditCard, LogOut, Settings, User } from 'lucide-react';
 
-type User = {
-  name: string;
-  email: string;
-}
-
 export default function UserNav() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const session = localStorage.getItem('user-session');
-    if (session) {
-      setUser(JSON.parse(session));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('user-session');
-    router.push('/login');
-  };
+  const { user, handleLogout } = useSession();
 
   if (!user) {
     return null;

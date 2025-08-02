@@ -9,12 +9,13 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const files = formData.getAll('files') as File[];
         const relativePath = formData.get('path') as string;
+        const user = formData.get('user') as string;
 
-        if (!files.length || !relativePath) {
-            return NextResponse.json({ error: 'Missing files or path' }, { status: 400 });
+        if (!files.length || !relativePath || !user) {
+            return NextResponse.json({ error: 'Missing files, path, or user' }, { status: 400 });
         }
         
-        const uploadDir = getResolvedPath(relativePath);
+        const uploadDir = getResolvedPath(relativePath, user);
         await fs.mkdir(uploadDir, { recursive: true });
 
         for (const file of files) {

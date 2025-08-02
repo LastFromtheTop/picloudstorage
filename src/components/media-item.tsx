@@ -5,6 +5,7 @@ import { Folder, Film, FileImage, CheckCircle2, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { MediaItem as MediaItemType } from '@/lib/file-utils';
+import { useSession } from '@/hooks/use-session';
 
 interface MediaItemProps {
   item: MediaItemType;
@@ -14,8 +15,9 @@ interface MediaItemProps {
 }
 
 export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }: MediaItemProps) {
+  const { user } = useSession();
   const Icon = item.type === 'folder' ? Folder : item.type === 'image' ? FileImage : Film;
-  const imageUrl = item.type === 'image' ? `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}` : '';
+  const imageUrl = user && item.type === 'image' ? `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}&user=${encodeURIComponent(user.email)}` : '';
 
   return (
     <Card

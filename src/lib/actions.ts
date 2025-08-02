@@ -11,47 +11,52 @@ import {
   deleteItems as utilDeleteItems,
   updateMetadata,
   readMetadata,
+  MediaItem,
 } from './file-utils';
 
-export async function getFiles() {
-  return await getAllFiles();
+export async function getFiles(user: string) {
+  return await getAllFiles(user);
 }
 
-export async function createFolder(currentPath: string, folderName: string) {
-  const resolvedPath = getResolvedPath(currentPath);
+export async function createFolder(currentPath: string, folderName: string, user: string) {
+  const resolvedPath = getResolvedPath(currentPath, user);
   await utilCreateFolder(path.join(resolvedPath, folderName));
   revalidatePath('/');
 }
 
-export async function deleteItems(itemPaths: string[], permanently: boolean) {
+export async function deleteItems(itemPaths: string[], permanently: boolean, user: string) {
   if (permanently) {
-    const resolvedPaths = itemPaths.map(getResolvedPath);
-    await utilDeleteItems(resolvedPaths);
+    const resolvedPaths = itemPaths.map(p => getResolvedPath(p, user));
+    await utilDeleteItems(resolvedPaths, user);
   } else {
-    const sourcePaths = itemPaths.map(getResolvedPath);
-    const destinationPath = TRASH_DIR;
-    await moveItems(sourcePaths, destinationPath, true);
+    const sourcePaths = itemPaths.map(p => getResolvedPath(p, user));
+    const destinationPath = path.join(TRASH_DIR, user);
+    await moveItems(sourcePaths, destinationPath, true, user);
   }
   revalidatePath('/');
 }
 
-export async function restoreItems(itemPaths: string[]) {
+export async function restoreItems(itemPaths: string[], user: string) {
     const metadata = await readMetadata();
-    const itemsToRestore = itemPaths.map(p => metadata.find(m => m.id === p)).filter(Boolean) as { id: string; originalPath: string }[];
+    const userTrashDir = path.join(TRASH_DIR, user);
+
+    const itemsToRestore = itemPaths
+        .map(p => metadata.find(m => m.id === p && m.owner === user))
+        .filter(Boolean) as (MediaItem & { originalPath: string })[];
     
     for (const item of itemsToRestore) {
-        const source = path.join(TRASH_DIR, path.basename(item.id));
-        const destinationDir = getResolvedPath(item.originalPath);
+        const source = path.join(userTrashDir, path.basename(item.id));
+        const destinationDir = getResolvedPath(item.originalPath, user);
         await utilCreateFolder(destinationDir); // Ensure destination exists
-        await moveItems([source], destinationDir, false);
+        await moveItems([source], destinationDir, false, user);
     }
     revalidatePath('/');
 }
 
-export async function toggleFavorite(itemPaths: string[]) {
+export async function toggleFavorite(itemPaths: string[], user: string) {
     const metadata = await readMetadata();
     const updatedMetadata = metadata.map(item => {
-        if (itemPaths.includes(item.id)) {
+        if (item.owner === user && itemPaths.includes(item.id)) {
             return { ...item, isFavorite: !item.isFavorite };
         }
         return item;

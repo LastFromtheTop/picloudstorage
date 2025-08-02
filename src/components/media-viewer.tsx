@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { MediaItem as MediaItemType } from '@/lib/file-utils';
+import { useSession } from '@/hooks/use-session';
 
 interface MediaViewerProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface MediaViewerProps {
 }
 
 export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: MediaViewerProps) {
+  const { user } = useSession();
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
@@ -59,8 +61,8 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
   const currentItem = items[current-1];
 
   const getMediaUrl = (item: MediaItemType) => {
-    if (!item) return '';
-    return `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}`;
+    if (!item || !user) return '';
+    return `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}&user=${encodeURIComponent(user.email)}`;
   }
 
   return (
