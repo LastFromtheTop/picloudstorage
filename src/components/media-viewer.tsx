@@ -153,7 +153,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                               src={getMediaUrl(item)}
                               alt={item.name}
                               className={cn(
-                                "object-contain transition-transform duration-200 w-full h-full",
+                                "object-contain transition-transform duration-200 max-w-full max-h-full",
                                 zoom > 1 && panning && 'cursor-grabbing',
                                 zoom > 1 && !panning && 'cursor-grab'
                               )}
