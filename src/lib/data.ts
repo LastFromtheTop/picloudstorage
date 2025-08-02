@@ -5,6 +5,7 @@ export interface MediaItem {
     path: string;
     url?: string;
     createdAt: string;
+    isFavorite?: boolean;
 }
 
 export const MOCK_DATA: MediaItem[] = [
@@ -23,6 +24,7 @@ export const MOCK_DATA: MediaItem[] = [
         path: 'My Files',
         url: 'https://placehold.co/800x600.png',
         createdAt: '2023-08-20T18:30:00Z',
+        isFavorite: true,
     },
     {
         id: 'video-1',
@@ -64,6 +66,7 @@ export const MOCK_DATA: MediaItem[] = [
         path: 'My Files/Vacation 2023',
         url: 'https://placehold.co/800x600.png',
         createdAt: '2023-08-22T13:20:00Z',
+        isFavorite: true,
     },
     {
         id: 'video-2',

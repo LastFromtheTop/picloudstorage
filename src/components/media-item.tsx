@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Folder, Film, FileImage, CheckCircle2 } from 'lucide-react';
+import { Folder, Film, FileImage, CheckCircle2, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { MediaItem as MediaItemType } from '@/lib/data';
@@ -47,6 +47,11 @@ export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }:
           {isSelected && (
              <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                 <CheckCircle2 className="h-4 w-4" />
+             </div>
+          )}
+          {item.isFavorite && !isSelected && (
+             <div className="absolute top-2 right-2 bg-transparent text-yellow-400">
+                <Star className="h-5 w-5" fill="currentColor" />
              </div>
           )}
         </div>

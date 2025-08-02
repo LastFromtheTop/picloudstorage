@@ -79,9 +79,14 @@ export default function MainLayout() {
   };
 
   const currentMedia = useMemo(() => {
-    const items = mediaItems.filter(
-      (item) => item.path === currentPath.join('/')
-    );
+    let items: MediaItemType[] = [];
+    if (currentView === 'files') {
+      items = mediaItems.filter(
+        (item) => item.path === currentPath.join('/')
+      );
+    } else if (currentView === 'favorites') {
+      items = mediaItems.filter(item => item.isFavorite);
+    }
     
     return [...items].sort((a, b) => {
       switch (sortOrder) {
@@ -98,7 +103,7 @@ export default function MainLayout() {
       }
     });
 
-  }, [mediaItems, currentPath, sortOrder]);
+  }, [mediaItems, currentPath, sortOrder, currentView]);
 
   const handleCreateFolder = () => {
     if (newFolderName.trim() === '') {
@@ -175,12 +180,31 @@ export default function MainLayout() {
         }, 500);
     }, 2000);
   };
+
+  const handleToggleFavorite = () => {
+    const itemsToToggle = Array.from(selectedItems);
+    const isFavoriting = mediaItems.find(item => item.id === itemsToToggle[0] && item.isFavorite) === undefined;
+
+    const newMediaItems = mediaItems.map(item => {
+      if (selectedItems.has(item.id)) {
+        return { ...item, isFavorite: isFavoriting };
+      }
+      return item;
+    });
+    setMediaItems(newMediaItems);
+    setSelectedItems(new Set());
+    toast({
+      title: isFavoriting ? 'Added to favorites' : 'Removed from favorites',
+      description: `${selectedItems.size} item(s) updated.`,
+    });
+  };
   
   const handleNavigate = (view: View) => {
     setCurrentView(view);
     if(view === 'files') {
       setCurrentPath(['My Files']);
     }
+    setSelectedItems(new Set());
   }
 
   return (
@@ -320,10 +344,16 @@ export default function MainLayout() {
           </div>
            <div className="flex items-center gap-2">
             {selectedItems.size > 0 && (
-                <Button variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete ({selectedItems.size})
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={handleToggleFavorite}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Favorite ({selectedItems.size})
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete ({selectedItems.size})
+                  </Button>
+                </>
             )}
             {currentView === 'files' && (
               <>
@@ -371,7 +401,19 @@ export default function MainLayout() {
           {currentView === 'memories' && (
             <MemoriesView allItems={mediaItems} />
           )}
-          {(currentView === 'favorites' || currentView === 'trash') && (
+          {currentView === 'favorites' && (
+            <MediaGrid
+              items={currentMedia}
+              selectedItems={selectedItems}
+              onSelect={handleSelect}
+              onFolderClick={(folderName) => {
+                setCurrentView('files');
+                setCurrentPath(['My Files', folderName]);
+              }}
+              allItems={mediaItems}
+            />
+          )}
+          {currentView === 'trash' && (
             <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
               <div className="flex flex-col items-center gap-1 text-center">
                 <h3 className="text-2xl font-bold tracking-tight">
