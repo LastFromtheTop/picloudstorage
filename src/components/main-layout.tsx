@@ -11,6 +11,7 @@ import {
   FolderPlus,
   PanelLeft,
   ListFilter,
+  Sparkles,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -46,8 +47,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import MemoriesView from './memories-view';
 
 type SortOrder = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc';
+type View = 'files' | 'memories' | 'favorites' | 'trash';
 
 export default function MainLayout() {
   const { toast } = useToast();
@@ -61,6 +64,7 @@ export default function MainLayout() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('name-asc');
+  const [currentView, setCurrentView] = useState<View>('files');
 
   const handleSelect = (id: string) => {
     setSelectedItems((prev) => {
@@ -170,7 +174,14 @@ export default function MainLayout() {
             });
         }, 500);
     }, 2000);
-};
+  };
+  
+  const handleNavigate = (view: View) => {
+    setCurrentView(view);
+    if(view === 'files') {
+      setCurrentPath(['My Files']);
+    }
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -184,27 +195,34 @@ export default function MainLayout() {
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
+              <button
+                onClick={() => handleNavigate('files')}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${currentView === 'files' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
               >
                 <Home className="h-4 w-4" />
                 My Files
-              </a>
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              </button>
+              <button
+                onClick={() => handleNavigate('memories')}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${currentView === 'memories' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
+              >
+                <Sparkles className="h-4 w-4" />
+                Memories
+              </button>
+              <button
+                onClick={() => handleNavigate('favorites')}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${currentView === 'favorites' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
               >
                 <Star className="h-4 w-4" />
                 Favorites
-              </a>
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              </button>
+              <button
+                onClick={() => handleNavigate('trash')}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${currentView === 'trash' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
               >
                 <Trash2 className="h-4 w-4" />
                 Trash
-              </a>
+              </button>
             </nav>
           </div>
           <div className="mt-auto p-4">
@@ -240,27 +258,34 @@ export default function MainLayout() {
                   <Cloud className="h-6 w-6" />
                   <span className="sr-only">PiCloudStorage</span>
                 </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
+                <button
+                  onClick={() => handleNavigate('files')}
+                  className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${currentView === 'files' ? 'bg-muted text-foreground' : 'text-muted-foreground'} hover:text-foreground`}
                 >
                   <Home className="h-5 w-5" />
                   My Files
-                </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                </button>
+                <button
+                  onClick={() => handleNavigate('memories')}
+                  className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${currentView === 'memories' ? 'bg-muted text-foreground' : 'text-muted-foreground'} hover:text-foreground`}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Memories
+                </button>
+                <button
+                  onClick={() => handleNavigate('favorites')}
+                  className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${currentView === 'favorites' ? 'bg-muted text-foreground' : 'text-muted-foreground'} hover:text-foreground`}
                 >
                   <Star className="h-5 w-5" />
                   Favorites
-                </a>
-                 <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                </button>
+                 <button
+                  onClick={() => handleNavigate('trash')}
+                  className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${currentView === 'trash' ? 'bg-muted text-foreground' : 'text-muted-foreground'} hover:text-foreground`}
                 >
                   <Trash2 className="h-5 w-5" />
                   Trash
-                </a>
+                </button>
               </nav>
                <div className="mt-auto">
                  <a
@@ -276,18 +301,21 @@ export default function MainLayout() {
           <div className="w-full flex-1">
              {/* Breadcrumbs */}
              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {currentPath.map((p, i) => (
-                    <React.Fragment key={p}>
-                        <button
-                            onClick={() => setCurrentPath(currentPath.slice(0, i + 1))}
-                            className="hover:text-foreground disabled:cursor-text disabled:hover:text-muted-foreground"
-                            disabled={i === currentPath.length -1}
-                        >
-                            {p}
-                        </button>
-                        {i < currentPath.length -1 && <span>/</span>}
-                    </React.Fragment>
-                ))}
+              {currentView === 'files' && currentPath.map((p, i) => (
+                  <React.Fragment key={p}>
+                      <button
+                          onClick={() => setCurrentPath(currentPath.slice(0, i + 1))}
+                          className="hover:text-foreground disabled:cursor-text disabled:hover:text-muted-foreground"
+                          disabled={i === currentPath.length -1}
+                      >
+                          {p}
+                      </button>
+                      {i < currentPath.length -1 && <span>/</span>}
+                  </React.Fragment>
+              ))}
+               {currentView !== 'files' && (
+                <span className="capitalize">{currentView}</span>
+              )}
             </div>
           </div>
            <div className="flex items-center gap-2">
@@ -297,43 +325,64 @@ export default function MainLayout() {
                     Delete ({selectedItems.size})
                 </Button>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Sort
+            {currentView === 'files' && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ListFilter className="mr-2 h-4 w-4" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+                      <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="date-desc">Date (Newest)</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="date-asc">Date (Oldest)</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                 <Button variant="outline" size="sm" onClick={() => setIsCreateFolderDialogOpen(true)}>
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    New Folder
+                 </Button>
+                <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
-                  <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="date-desc">Date (Newest)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="date-asc">Date (Oldest)</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-             <Button variant="outline" size="sm" onClick={() => setIsCreateFolderDialogOpen(true)}>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                New Folder
-             </Button>
-            <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload
-            </Button>
+              </>
+            )}
           </div>
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          <MediaGrid
-            items={currentMedia}
-            selectedItems={selectedItems}
-            onSelect={handleSelect}
-            onFolderClick={(folderName) => setCurrentPath([...currentPath, folderName])}
-            allItems={mediaItems}
-          />
+          {currentView === 'files' && (
+            <MediaGrid
+              items={currentMedia}
+              selectedItems={selectedItems}
+              onSelect={handleSelect}
+              onFolderClick={(folderName) => setCurrentPath([...currentPath, folderName])}
+              allItems={mediaItems}
+            />
+          )}
+          {currentView === 'memories' && (
+            <MemoriesView allItems={mediaItems} />
+          )}
+          {(currentView === 'favorites' || currentView === 'trash') && (
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+              <div className="flex flex-col items-center gap-1 text-center">
+                <h3 className="text-2xl font-bold tracking-tight">
+                  Coming Soon!
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This feature is under construction.
+                </p>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
