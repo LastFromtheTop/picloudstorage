@@ -104,7 +104,6 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="max-w-7xl w-full h-[90vh] bg-black/80 backdrop-blur-sm border-0 p-0 flex flex-col"
-        onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
@@ -142,18 +141,19 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
           }}>
             <CarouselContent className="h-full">
               {items.map((item, index) => (
-                <CarouselItem key={index} className="h-full w-full relative">
+                <CarouselItem key={index} className="h-full w-full flex items-center justify-center">
                     {item.type === 'image' && (
                         <div 
-                          className="absolute inset-0 flex items-center justify-center overflow-hidden" 
+                          className="w-full h-full flex items-center justify-center overflow-hidden" 
                           onMouseDown={handleMouseDown}
+                          onMouseMove={handleMouseMove}
                         >
                           <img
                               ref={imageRef}
                               src={getMediaUrl(item)}
                               alt={item.name}
                               className={cn(
-                                "object-contain transition-transform duration-200 w-full h-full",
+                                "object-contain max-w-full max-h-full transition-transform duration-200",
                                 zoom > 1 && panning && 'cursor-grabbing',
                                 zoom > 1 && !panning && 'cursor-grab'
                               )}
@@ -166,7 +166,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                         </div>
                     )}
                     {item.type === 'video' && (
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-full h-full flex items-center justify-center">
                             <video
                                 src={getMediaUrl(item)}
                                 controls
