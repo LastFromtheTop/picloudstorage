@@ -145,22 +145,22 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                 <CarouselItem key={index} className="flex items-center justify-center">
                     {item.type === 'image' && (
                         <div 
-                          className="w-full h-full flex items-center justify-center overflow-hidden" 
+                          className="relative w-full h-full flex items-center justify-center overflow-hidden" 
                           onMouseDown={handleMouseDown}
                         >
                           <Image
                               ref={imageRef}
                               src={getMediaUrl(item)}
                               alt={item.name}
-                              width={1920}
-                              height={1080}
+                              fill
                               className={cn(
-                                "object-contain max-w-full max-h-full transition-transform duration-200",
+                                "object-contain transition-transform duration-200",
                                 zoom > 1 && panning && 'cursor-grabbing',
                                 zoom > 1 && !panning && 'cursor-grab'
                               )}
                               style={{
                                 transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+                                transformOrigin: 'center center',
                               }}
                               data-ai-hint="gallery full"
                               unoptimized
