@@ -16,10 +16,10 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { useEffect, useState } from 'react';
-import type { MediaItem as MediaItemType } from '@/lib/data';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
+import { MediaItem as MediaItemType } from '@/lib/file-utils';
 
 interface MediaViewerProps {
   isOpen: boolean;
@@ -58,6 +58,11 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
 
   const currentItem = items[current-1];
 
+  const getMediaUrl = (item: MediaItemType) => {
+    if (!item) return '';
+    return `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}`;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl w-full h-full max-h-[90vh] bg-black/80 backdrop-blur-sm border-0 p-0 flex flex-col">
@@ -82,17 +87,18 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                 <CarouselItem key={index} className="flex items-center justify-center">
                     {item.type === 'image' && (
                         <Image
-                            src={item.url || `https://placehold.co/1920x1080.png`}
+                            src={getMediaUrl(item)}
                             alt={item.name}
                             width={1920}
                             height={1080}
                             className="object-contain max-w-full max-h-full"
                             data-ai-hint="gallery full"
+                            unoptimized
                         />
                     )}
                     {item.type === 'video' && (
                         <video
-                            src={item.url}
+                            src={getMediaUrl(item)}
                             controls
                             autoPlay
                             className="object-contain max-w-full max-h-full"

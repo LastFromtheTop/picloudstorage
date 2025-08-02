@@ -14,7 +14,7 @@ import {
   Sparkles,
   Undo,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/sheet';
 import UserNav from '@/components/user-nav';
 import MediaGrid from '@/components/media-grid';
-import { MOCK_DATA, type MediaItem as MediaItemType } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -49,14 +48,17 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import MemoriesView from './memories-view';
+import { createFolder, deleteItems, getFiles, restoreItems, toggleFavorite } from '@/lib/actions';
+import type { MediaItem } from '@/lib/file-utils';
 
 type SortOrder = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc';
 type View = 'files' | 'memories' | 'favorites' | 'trash';
 
 export default function MainLayout() {
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
   const [currentPath, setCurrentPath] = useState<string[]>(['My Files']);
-  const [mediaItems, setMediaItems] = useState<MediaItemType[]>(MOCK_DATA);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeletePermanentlyDialogOpen, setIsDeletePermanentlyDialogOpen] = useState(false);
@@ -67,6 +69,17 @@ export default function MainLayout() {
   const [isUploading, setIsUploading] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('name-asc');
   const [currentView, setCurrentView] = useState<View>('files');
+  
+  const refreshFiles = () => {
+    startTransition(async () => {
+      const allFiles = await getFiles();
+      setMediaItems(allFiles);
+    });
+  };
+
+  useEffect(() => {
+    refreshFiles();
+  }, []);
 
   const handleSelect = (id: string) => {
     setSelectedItems((prev) => {
@@ -81,7 +94,7 @@ export default function MainLayout() {
   };
 
   const currentMedia = useMemo(() => {
-    let items: MediaItemType[] = [];
+    let items: MediaItem[] = [];
     if (currentView === 'files') {
       items = mediaItems.filter(
         (item) => item.path === currentPath.join('/') && !item.isTrashed
@@ -109,7 +122,7 @@ export default function MainLayout() {
 
   }, [mediaItems, currentPath, sortOrder, currentView]);
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (newFolderName.trim() === '') {
       toast({
         variant: 'destructive',
@@ -118,14 +131,10 @@ export default function MainLayout() {
       });
       return;
     }
-    const newFolder: MediaItemType = {
-      id: `folder-${Date.now()}`,
-      name: newFolderName,
-      type: 'folder',
-      path: currentPath.join('/'),
-      createdAt: new Date().toISOString(),
-    };
-    setMediaItems((prev) => [...prev, newFolder]);
+    
+    await createFolder(currentPath.join('/'), newFolderName);
+    refreshFiles();
+
     setIsCreateFolderDialogOpen(false);
     setNewFolderName('');
     toast({
@@ -134,103 +143,91 @@ export default function MainLayout() {
     });
   };
 
-  const handleDelete = () => {
-    const newMediaItems = mediaItems.map((item) => {
-        if (selectedItems.has(item.id)) {
-            return { ...item, isTrashed: true, isFavorite: false };
-        }
-        return item;
-    });
-    setMediaItems(newMediaItems);
+  const handleDelete = async (permanently = false) => {
+    const itemsToDelete = Array.from(selectedItems);
+    await deleteItems(itemsToDelete, permanently);
+    refreshFiles();
     setSelectedItems(new Set());
     setIsDeleteDialogOpen(false);
-    toast({
-      title: 'Success',
-      description: `${selectedItems.size} item(s) moved to Trash.`,
-    });
-  };
-
-  const handleRestore = () => {
-    const newMediaItems = mediaItems.map((item) => {
-        if (selectedItems.has(item.id)) {
-            return { ...item, isTrashed: false };
-        }
-        return item;
-    });
-    setMediaItems(newMediaItems);
-    setSelectedItems(new Set());
-    toast({
-        title: 'Success',
-        description: `${selectedItems.size} item(s) restored.`,
-    });
-  };
-
-  const handleDeletePermanently = () => {
-    const newMediaItems = mediaItems.filter(
-        (item) => !selectedItems.has(item.id)
-    );
-    setMediaItems(newMediaItems);
-    setSelectedItems(new Set());
     setIsDeletePermanentlyDialogOpen(false);
     toast({
+      title: 'Success',
+      description: `${itemsToDelete.length} item(s) ${permanently ? 'permanently deleted' : 'moved to Trash'}.`,
+    });
+  };
+
+  const handleRestore = async () => {
+    const itemsToRestore = Array.from(selectedItems);
+    await restoreItems(itemsToRestore);
+    refreshFiles();
+    setSelectedItems(new Set());
+    toast({
         title: 'Success',
-        description: `${selectedItems.size} item(s) permanently deleted.`,
+        description: `${itemsToRestore.length} item(s) restored.`,
     });
   };
   
-  const handleUpload = (files: FileList | null) => {
+  const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
     setUploadProgress(0);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-        setUploadProgress(prev => {
-            if (prev >= 90) {
-                return prev;
-            }
-            return prev + 10;
-        });
-    }, 200);
 
-    setTimeout(() => {
-        clearInterval(interval);
-        setUploadProgress(100);
-        const newFiles: MediaItemType[] = Array.from(files).map((file, index) => ({
-            id: `file-${Date.now()}-${index}`,
-            name: file.name,
-            type: file.type.startsWith('image/') ? 'image' : 'video',
-            path: currentPath.join('/'),
-            url: URL.createObjectURL(file),
-            createdAt: new Date().toISOString(),
-        }));
-        setMediaItems(prev => [...prev, ...newFiles]);
-        setTimeout(() => {
-            setIsUploading(false);
-            setIsUploadDialogOpen(false);
+    const formData = new FormData();
+    formData.append('path', currentPath.join('/'));
+    for (const file of files) {
+        formData.append('files', file);
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload', true);
+
+    xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setUploadProgress(percentComplete);
+        }
+    };
+
+    xhr.onload = () => {
+        setIsUploading(false);
+        setIsUploadDialogOpen(false);
+        if (xhr.status === 200) {
             toast({
                 title: 'Upload complete',
                 description: `${files.length} file(s) added successfully.`,
             });
-        }, 500);
-    }, 2000);
+            refreshFiles();
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Upload failed',
+                description: 'An error occurred during upload.',
+            });
+        }
+    };
+    
+    xhr.onerror = () => {
+        setIsUploading(false);
+        setIsUploadDialogOpen(false);
+        toast({
+            variant: 'destructive',
+            title: 'Upload failed',
+            description: 'A network error occurred.',
+        });
+    };
+
+    xhr.send(formData);
   };
-
-  const handleToggleFavorite = () => {
+  
+  const handleToggleFavorite = async () => {
     const itemsToToggle = Array.from(selectedItems);
+    await toggleFavorite(itemsToToggle);
+    refreshFiles();
     const isFavoriting = mediaItems.find(item => item.id === itemsToToggle[0] && item.isFavorite) === undefined;
-
-    const newMediaItems = mediaItems.map(item => {
-      if (selectedItems.has(item.id)) {
-        return { ...item, isFavorite: isFavoriting };
-      }
-      return item;
-    });
-    setMediaItems(newMediaItems);
     setSelectedItems(new Set());
     toast({
       title: isFavoriting ? 'Added to favorites' : 'Removed from favorites',
-      description: `${selectedItems.size} item(s) updated.`,
+      description: `${itemsToToggle.length} item(s) updated.`,
     });
   };
   
@@ -436,38 +433,46 @@ export default function MainLayout() {
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          {currentView === 'files' && (
-            <MediaGrid
-              items={currentMedia}
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              onFolderClick={(folderName) => setCurrentPath([...currentPath, folderName])}
-              allItems={mediaItems}
-            />
-          )}
-          {currentView === 'memories' && (
-            <MemoriesView allItems={mediaItems.filter(item => !item.isTrashed)} />
-          )}
-          {currentView === 'favorites' && (
-            <MediaGrid
-              items={currentMedia}
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              onFolderClick={(folderName) => {
-                setCurrentView('files');
-                setCurrentPath(['My Files', folderName]);
-              }}
-              allItems={mediaItems}
-            />
-          )}
-          {currentView === 'trash' && (
-             <MediaGrid
-              items={currentMedia}
-              selectedItems={selectedItems}
-              onSelect={handleSelect}
-              onFolderClick={() => {}} // No folders in trash view
-              allItems={mediaItems}
-            />
+          {isPending ? (
+            <div className="flex items-center justify-center h-full">
+              <Sparkles className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {currentView === 'files' && (
+                <MediaGrid
+                  items={currentMedia}
+                  selectedItems={selectedItems}
+                  onSelect={handleSelect}
+                  onFolderClick={(folderName) => setCurrentPath([...currentPath, folderName])}
+                  allItems={mediaItems}
+                />
+              )}
+              {currentView === 'memories' && (
+                <MemoriesView allItems={mediaItems.filter(item => !item.isTrashed)} />
+              )}
+              {currentView === 'favorites' && (
+                <MediaGrid
+                  items={currentMedia}
+                  selectedItems={selectedItems}
+                  onSelect={handleSelect}
+                  onFolderClick={(folderName) => {
+                    setCurrentView('files');
+                    setCurrentPath(['My Files', folderName]);
+                  }}
+                  allItems={mediaItems}
+                />
+              )}
+              {currentView === 'trash' && (
+                 <MediaGrid
+                  items={currentMedia}
+                  selectedItems={selectedItems}
+                  onSelect={handleSelect}
+                  onFolderClick={() => {}} // No folders in trash view
+                  allItems={mediaItems}
+                />
+              )}
+            </>
           )}
         </main>
       </div>
@@ -484,7 +489,7 @@ export default function MainLayout() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => handleDelete(false)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               Move to Trash
@@ -505,7 +510,7 @@ export default function MainLayout() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeletePermanently}
+              onClick={() => handleDelete(true)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               Yes, delete permanently
@@ -554,6 +559,7 @@ export default function MainLayout() {
                         <div className="w-full space-y-2">
                             <p>Uploading...</p>
                             <Progress value={uploadProgress} />
+                            <p className="text-sm text-muted-foreground">{Math.round(uploadProgress)}%</p>
                         </div>
                     ) : (
                         <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">

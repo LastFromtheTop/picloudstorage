@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Folder, Film, FileImage, CheckCircle2, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { MediaItem as MediaItemType } from '@/lib/data';
+import { MediaItem as MediaItemType } from '@/lib/file-utils';
 
 interface MediaItemProps {
   item: MediaItemType;
@@ -15,6 +15,7 @@ interface MediaItemProps {
 
 export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }: MediaItemProps) {
   const Icon = item.type === 'folder' ? Folder : item.type === 'image' ? FileImage : Film;
+  const imageUrl = item.type === 'image' ? `/api/media?path=${encodeURIComponent(item.path)}&file=${encodeURIComponent(item.name)}` : '';
 
   return (
     <Card
@@ -34,11 +35,12 @@ export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }:
             </div>
           ) : item.type === 'image' ? (
             <Image
-              src={item.url || 'https://placehold.co/400x400.png'}
+              src={imageUrl || 'https://placehold.co/400x400.png'}
               alt={item.name}
               fill
               className="object-cover transition-transform group-hover:scale-105"
               data-ai-hint="gallery photo"
+              unoptimized
             />
           ) : (
              <div className="flex h-full w-full items-center justify-center bg-secondary">

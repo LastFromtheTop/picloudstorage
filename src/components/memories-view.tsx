@@ -1,18 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { MediaItem as MediaItemType } from '@/lib/data';
 import MediaGrid from './media-grid';
 import { Sparkles } from 'lucide-react';
-import { format, subYears, getDate, getMonth } from 'date-fns';
+import { getDate, getMonth } from 'date-fns';
+import { MediaItem as MediaItemType } from '@/lib/file-utils';
 
 interface MemoriesViewProps {
   allItems: MediaItemType[];
-}
-
-interface Memory {
-  date: string;
-  items: MediaItemType[];
 }
 
 export default function MemoriesView({ allItems }: MemoriesViewProps) {

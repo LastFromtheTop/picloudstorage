@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import MediaItem from './media-item';
 import MediaViewer from './media-viewer';
-import type { MediaItem as MediaItemType } from '@/lib/data';
 import { FileQuestion, Trash2 } from 'lucide-react';
+import { MediaItem as MediaItemType } from '@/lib/file-utils';
 
 interface MediaGridProps {
   items: MediaItemType[];
@@ -29,8 +29,8 @@ export default function MediaGrid({ items, selectedItems, onSelect, onFolderClic
   };
 
   if (items.length === 0) {
-    const isTrashView = items.every(item => item.isTrashed);
-    if(isTrashView && allItems.filter(i => i.isTrashed).length === 0) {
+    const inTrashView = allItems.some(i => i.isTrashed);
+    if(inTrashView && allItems.filter(i => i.isTrashed).length === 0) {
        return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Trash2 className="w-16 h-16 mb-4" />
