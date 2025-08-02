@@ -108,7 +108,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <DialogHeader className="p-4 text-white flex-row flex justify-between items-center z-10">
+        <DialogHeader className="p-4 text-white flex-row flex justify-between items-center z-10 shrink-0">
           <DialogTitle>{currentItem?.name}</DialogTitle>
            {currentItem?.type === 'image' && (
             <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
            )}
           <div className="flex items-center gap-4">
             <div className="text-center text-sm text-muted-foreground">
-              {current} of {count}
+              {current > 0 ? `${current} of ${count}` : ''}
             </div>
             <DialogClose asChild>
                <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 hover:text-white">
@@ -134,7 +134,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
             </DialogClose>
           </div>
         </DialogHeader>
-        <div className="flex-1 flex items-center justify-center min-h-0 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center min-h-0">
           <Carousel setApi={setApi} className="w-full h-full" opts={{
             startIndex: startIndex,
             loop: items.length > 1,
@@ -142,10 +142,10 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
           }}>
             <CarouselContent className="h-full">
               {items.map((item, index) => (
-                <CarouselItem key={index} className="flex items-center justify-center">
+                <CarouselItem key={index} className="h-full flex items-center justify-center">
                     {item.type === 'image' && (
                         <div 
-                          className="relative w-full h-full flex items-center justify-center overflow-hidden" 
+                          className="w-full h-full relative" 
                           onMouseDown={handleMouseDown}
                         >
                           <Image
