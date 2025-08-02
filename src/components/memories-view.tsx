@@ -24,7 +24,7 @@ export default function MemoriesView({ allItems }: MemoriesViewProps) {
     const currentMonth = getMonth(today);
 
     const memoryItems: MediaItemType[] = allItems.filter(item => {
-      if (item.type === 'folder') return false;
+      if (item.type === 'folder' || item.isTrashed) return false;
       const itemDate = new Date(item.createdAt);
       const itemDay = getDate(itemDate);
       const itemMonth = getMonth(itemDate);

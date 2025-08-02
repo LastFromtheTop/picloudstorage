@@ -6,6 +6,7 @@ export interface MediaItem {
     url?: string;
     createdAt: string;
     isFavorite?: boolean;
+    isTrashed?: boolean;
 }
 
 export const MOCK_DATA: MediaItem[] = [

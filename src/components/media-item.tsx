@@ -20,7 +20,8 @@ export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }:
     <Card
       className={cn(
         'group relative cursor-pointer transition-all duration-200 ease-in-out',
-        isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'ring-0'
+        isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'ring-0',
+        item.isTrashed && 'opacity-50'
       )}
       onClick={() => onSelect(item.id)}
       onDoubleClick={onDoubleClick}
@@ -40,17 +41,17 @@ export default function MediaItem({ item, isSelected, onSelect, onDoubleClick }:
               data-ai-hint="gallery photo"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary">
+             <div className="flex h-full w-full items-center justify-center bg-secondary">
               <Film className="h-16 w-16 text-muted-foreground/50" />
             </div>
           )}
           {isSelected && (
-             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 z-10">
                 <CheckCircle2 className="h-4 w-4" />
              </div>
           )}
           {item.isFavorite && !isSelected && (
-             <div className="absolute top-2 right-2 bg-transparent text-yellow-400">
+             <div className="absolute top-2 right-2 bg-transparent text-yellow-400 z-10">
                 <Star className="h-5 w-5" fill="currentColor" />
              </div>
           )}

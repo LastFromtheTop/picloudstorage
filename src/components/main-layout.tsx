@@ -12,6 +12,7 @@ import {
   PanelLeft,
   ListFilter,
   Sparkles,
+  Undo,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ export default function MainLayout() {
   const [mediaItems, setMediaItems] = useState<MediaItemType[]>(MOCK_DATA);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletePermanentlyDialogOpen, setIsDeletePermanentlyDialogOpen] = useState(false);
   const [isCreateFolderDialogOpen, setIsCreateFolderDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -82,10 +84,12 @@ export default function MainLayout() {
     let items: MediaItemType[] = [];
     if (currentView === 'files') {
       items = mediaItems.filter(
-        (item) => item.path === currentPath.join('/')
+        (item) => item.path === currentPath.join('/') && !item.isTrashed
       );
     } else if (currentView === 'favorites') {
-      items = mediaItems.filter(item => item.isFavorite);
+      items = mediaItems.filter(item => item.isFavorite && !item.isTrashed);
+    } else if (currentView === 'trash') {
+      items = mediaItems.filter(item => item.isTrashed);
     }
     
     return [...items].sort((a, b) => {
@@ -131,15 +135,46 @@ export default function MainLayout() {
   };
 
   const handleDelete = () => {
-    const newMediaItems = mediaItems.filter(
-      (item) => !selectedItems.has(item.id)
-    );
+    const newMediaItems = mediaItems.map((item) => {
+        if (selectedItems.has(item.id)) {
+            return { ...item, isTrashed: true, isFavorite: false };
+        }
+        return item;
+    });
     setMediaItems(newMediaItems);
     setSelectedItems(new Set());
     setIsDeleteDialogOpen(false);
     toast({
       title: 'Success',
-      description: `${selectedItems.size} item(s) deleted.`,
+      description: `${selectedItems.size} item(s) moved to Trash.`,
+    });
+  };
+
+  const handleRestore = () => {
+    const newMediaItems = mediaItems.map((item) => {
+        if (selectedItems.has(item.id)) {
+            return { ...item, isTrashed: false };
+        }
+        return item;
+    });
+    setMediaItems(newMediaItems);
+    setSelectedItems(new Set());
+    toast({
+        title: 'Success',
+        description: `${selectedItems.size} item(s) restored.`,
+    });
+  };
+
+  const handleDeletePermanently = () => {
+    const newMediaItems = mediaItems.filter(
+        (item) => !selectedItems.has(item.id)
+    );
+    setMediaItems(newMediaItems);
+    setSelectedItems(new Set());
+    setIsDeletePermanentlyDialogOpen(false);
+    toast({
+        title: 'Success',
+        description: `${selectedItems.size} item(s) permanently deleted.`,
     });
   };
   
@@ -343,19 +378,31 @@ export default function MainLayout() {
             </div>
           </div>
            <div className="flex items-center gap-2">
-            {selectedItems.size > 0 && (
+            {selectedItems.size > 0 && currentView !== 'trash' && (
                 <>
                   <Button variant="outline" size="sm" onClick={handleToggleFavorite}>
                       <Star className="mr-2 h-4 w-4" />
                       Favorite ({selectedItems.size})
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete ({selectedItems.size})
+                      Move to Trash
                   </Button>
                 </>
             )}
-            {currentView === 'files' && (
+             {selectedItems.size > 0 && currentView === 'trash' && (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleRestore}>
+                      <Undo className="mr-2 h-4 w-4" />
+                      Restore ({selectedItems.size})
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => setIsDeletePermanentlyDialogOpen(true)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Permanently
+                  </Button>
+                </>
+            )}
+            {currentView === 'files' && selectedItems.size === 0 && (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -399,7 +446,7 @@ export default function MainLayout() {
             />
           )}
           {currentView === 'memories' && (
-            <MemoriesView allItems={mediaItems} />
+            <MemoriesView allItems={mediaItems.filter(item => !item.isTrashed)} />
           )}
           {currentView === 'favorites' && (
             <MediaGrid
@@ -414,16 +461,13 @@ export default function MainLayout() {
             />
           )}
           {currentView === 'trash' && (
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-              <div className="flex flex-col items-center gap-1 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">
-                  Coming Soon!
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  This feature is under construction.
-                </p>
-              </div>
-            </div>
+             <MediaGrid
+              items={currentMedia}
+              selectedItems={selectedItems}
+              onSelect={handleSelect}
+              onFolderClick={() => {}} // No folders in trash view
+              allItems={mediaItems}
+            />
           )}
         </main>
       </div>
@@ -432,9 +476,9 @@ export default function MainLayout() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete {selectedItems.size} item(s).
+              This will move {selectedItems.size} item(s) to the Trash. You can restore them later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -443,11 +487,33 @@ export default function MainLayout() {
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              Yes, delete
+              Move to Trash
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Permanently Delete Confirmation Dialog */}
+      <AlertDialog open={isDeletePermanentlyDialogOpen} onOpenChange={setIsDeletePermanentlyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {selectedItems.size} item(s).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePermanently}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Yes, delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Create Folder Dialog */}
         <Dialog open={isCreateFolderDialogOpen} onOpenChange={setIsCreateFolderDialogOpen}>
