@@ -142,10 +142,10 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
           }}>
             <CarouselContent className="h-full">
               {items.map((item, index) => (
-                <CarouselItem key={index} className="h-full flex items-center justify-center p-0">
+                <CarouselItem key={index} className="h-full w-full relative">
                     {item.type === 'image' && (
                         <div 
-                          className="w-full h-full flex items-center justify-center overflow-hidden" 
+                          className="absolute inset-0 flex items-center justify-center overflow-hidden" 
                           onMouseDown={handleMouseDown}
                         >
                           <img
@@ -153,7 +153,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                               src={getMediaUrl(item)}
                               alt={item.name}
                               className={cn(
-                                "object-contain transition-transform duration-200 max-w-full max-h-full",
+                                "object-contain transition-transform duration-200 w-full h-full",
                                 zoom > 1 && panning && 'cursor-grabbing',
                                 zoom > 1 && !panning && 'cursor-grab'
                               )}
@@ -166,14 +166,16 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                         </div>
                     )}
                     {item.type === 'video' && (
-                        <video
-                            src={getMediaUrl(item)}
-                            controls
-                            autoPlay
-                            className="object-contain max-w-full max-h-full"
-                        >
-                            Your browser does not support the video tag.
-                        </video>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <video
+                                src={getMediaUrl(item)}
+                                controls
+                                autoPlay
+                                className="object-contain max-w-full max-h-full"
+                            >
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
                     )}
                 </CarouselItem>
               ))}
