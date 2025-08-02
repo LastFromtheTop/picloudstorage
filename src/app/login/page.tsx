@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { GalleryHorizontal } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -63,9 +63,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-[#0a192f] p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-            <GalleryHorizontal className="mx-auto h-12 w-12 text-[#c4d3f2]" />
+            <Cloud className="mx-auto h-12 w-12 text-[#c4d3f2]" />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-[#e6f1ff]">
-            Personal Media Hub
+            PiCloudStorage
           </h1>
           <p className="mt-2 text-sm text-[#8892b0]">
             Sign in to access your media

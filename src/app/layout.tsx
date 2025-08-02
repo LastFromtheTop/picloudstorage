@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Personal Media Hub',
+  title: 'PiCloudStorage',
   description: 'Your personal media gallery on your Raspberry Pi.',
 };
 

@@ -1,4 +1,4 @@
-# Personal Media Hub
+# PiCloudStorage
 
 This is a Next.js application for managing and viewing your personal media files.
 
@@ -60,4 +60,4 @@ Start the production server. The app will typically be available at `http://<YOU
 npm run start
 ```
 
-Your Personal Media Hub should now be running on your Raspberry Pi!
+Your PiCloudStorage should now be running on your Raspberry Pi!
