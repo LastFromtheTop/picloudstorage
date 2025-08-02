@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -103,7 +104,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-7xl w-full h-full max-h-[90vh] bg-black/80 backdrop-blur-sm border-0 p-0 flex flex-col"
+        className="max-w-7xl w-full h-[90vh] bg-black/80 backdrop-blur-sm border-0 p-0 flex flex-col"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -134,7 +135,7 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
             </DialogClose>
           </div>
         </DialogHeader>
-        <div className="flex-1 flex items-center justify-center min-h-0">
+        <div className="flex-1 flex items-center justify-center min-h-0 relative">
           <Carousel setApi={setApi} className="w-full h-full" opts={{
             startIndex: startIndex,
             loop: items.length > 1,
@@ -142,29 +143,33 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
           }}>
             <CarouselContent className="h-full">
               {items.map((item, index) => (
-                <CarouselItem key={index} className="h-full flex items-center justify-center">
+                <CarouselItem key={index} className="h-full flex items-center justify-center p-0">
                     {item.type === 'image' && (
                         <div 
-                          className="w-full h-full relative" 
+                          className="w-full h-full flex items-center justify-center overflow-hidden" 
                           onMouseDown={handleMouseDown}
                         >
-                          <Image
-                              ref={imageRef}
-                              src={getMediaUrl(item)}
-                              alt={item.name}
-                              fill
-                              className={cn(
-                                "object-contain transition-transform duration-200",
-                                zoom > 1 && panning && 'cursor-grabbing',
-                                zoom > 1 && !panning && 'cursor-grab'
-                              )}
-                              style={{
-                                transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
-                                transformOrigin: 'center center',
-                              }}
-                              data-ai-hint="gallery full"
-                              unoptimized
-                          />
+                          <div
+                            className="relative w-full h-full"
+                          >
+                            <Image
+                                ref={imageRef}
+                                src={getMediaUrl(item)}
+                                alt={item.name}
+                                fill
+                                className={cn(
+                                  "object-contain transition-transform duration-200",
+                                  zoom > 1 && panning && 'cursor-grabbing',
+                                  zoom > 1 && !panning && 'cursor-grab'
+                                )}
+                                style={{
+                                  transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+                                  transformOrigin: 'center center',
+                                }}
+                                data-ai-hint="gallery full"
+                                unoptimized
+                            />
+                          </div>
                         </div>
                     )}
                     {item.type === 'video' && (
