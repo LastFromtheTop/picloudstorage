@@ -280,7 +280,8 @@ export default function MainLayout() {
                     <React.Fragment key={p}>
                         <button
                             onClick={() => setCurrentPath(currentPath.slice(0, i + 1))}
-                            className="hover:text-foreground"
+                            className="hover:text-foreground disabled:cursor-text disabled:hover:text-muted-foreground"
+                            disabled={i === currentPath.length -1}
                         >
                             {p}
                         </button>
@@ -413,5 +414,3 @@ export default function MainLayout() {
     </div>
   );
 }
-
-    
