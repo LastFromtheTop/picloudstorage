@@ -10,8 +10,9 @@ import {
   Upload,
   FolderPlus,
   PanelLeft,
+  ListFilter,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,6 +36,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from './ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+
+type SortOrder = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc';
 
 export default function MainLayout() {
   const { toast } = useToast();
@@ -47,6 +60,7 @@ export default function MainLayout() {
   const [newFolderName, setNewFolderName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('name-asc');
 
   const handleSelect = (id: string) => {
     setSelectedItems((prev) => {
@@ -60,9 +74,27 @@ export default function MainLayout() {
     });
   };
 
-  const currentMedia = mediaItems.filter(
-    (item) => item.path === currentPath.join('/')
-  );
+  const currentMedia = useMemo(() => {
+    const items = mediaItems.filter(
+      (item) => item.path === currentPath.join('/')
+    );
+    
+    return [...items].sort((a, b) => {
+      switch (sortOrder) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'date-asc':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'date-desc':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
+
+  }, [mediaItems, currentPath, sortOrder]);
 
   const handleCreateFolder = () => {
     if (newFolderName.trim() === '') {
@@ -102,7 +134,7 @@ export default function MainLayout() {
     });
   };
   
-  const handleUpload = (files: FileList) => {
+  const handleUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
     setUploadProgress(0);
@@ -135,7 +167,6 @@ export default function MainLayout() {
             toast({
                 title: 'Upload complete',
                 description: `${files.length} file(s) added successfully.`,
-                className: 'bg-green-100 dark:bg-green-900 border-green-400 dark:border-green-600'
             });
         }, 500);
     }, 2000);
@@ -265,6 +296,24 @@ export default function MainLayout() {
                     Delete ({selectedItems.size})
                 </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+                  <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="date-desc">Date (Newest)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="date-asc">Date (Oldest)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
              <Button variant="outline" size="sm" onClick={() => setIsCreateFolderDialogOpen(true)}>
                 <FolderPlus className="mr-2 h-4 w-4" />
                 New Folder
@@ -300,7 +349,7 @@ export default function MainLayout() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               Yes, delete
             </AlertDialogAction>
@@ -355,7 +404,7 @@ export default function MainLayout() {
                                 <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                                 <p className="text-xs text-muted-foreground">Images or Videos</p>
                             </div>
-                            <input id="dropzone-file" type="file" className="hidden" multiple onChange={(e) => handleUpload(e.target.files!)} />
+                            <input id="dropzone-file" type="file" className="hidden" multiple onChange={(e) => handleUpload(e.target.files)} />
                         </label>
                     )}
                 </div>
@@ -364,3 +413,5 @@ export default function MainLayout() {
     </div>
   );
 }
+
+    
