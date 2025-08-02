@@ -39,7 +39,6 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
   const [panning, setPanning] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (!api) return;
@@ -149,7 +148,6 @@ export default function MediaViewer({ isOpen, onClose, items, startIndex = 0 }: 
                           onMouseMove={handleMouseMove}
                         >
                           <img
-                              ref={imageRef}
                               src={getMediaUrl(item)}
                               alt={item.name}
                               className={cn(
