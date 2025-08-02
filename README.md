@@ -2,6 +2,15 @@
 
 This is a Next.js application for managing and viewing your personal media files.
 
+## How File Storage Works (Current State)
+
+**Important:** This application is currently a prototype. It uses mock data to simulate a library of files and folders. When you upload a file, it is **only stored in your browser's memory** for the duration of your session. It is **not** saved to the Raspberry Pi's file system.
+
+To implement persistent storage, you would need to:
+1.  Create a designated folder on your Raspberry Pi to store the media (e.g., `/home/pi/pimedia`).
+2.  Implement backend logic (e.g., using Next.js API Routes or Server Actions) to handle file uploads, deletions, and listings by interacting with the Pi's file system.
+3.  Replace the mock data in the frontend with API calls to your new backend.
+
 ## Running on a Raspberry Pi
 
 To run this application on a Raspberry Pi, follow these steps.
